@@ -76,5 +76,6 @@ module.exports.signup_post = async (req, res) => {
 };
 
 module.exports.logout = (req, res) => {
-  res.send("Logout was successful");
+  res.cookie("jwt", "", { maxAge: 1 });
+  res.redirect("/login");
 };

@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const app = express();
 const authRoutes = require("./routes/authRoutes");
 const cookieParser = require("cookie-parser");
+const { isAuthorised, checkUser } = require("./middleware/authMiddleware");
 
 //connect to database
 mongoose
@@ -21,6 +22,9 @@ app.use(express.json());
 app.use(cookieParser());
 
 //routes
+app.get("*", checkUser);
 app.use(authRoutes);
 app.get("/", (req, res) => res.status(200).render("home"));
-app.get("/smoothies", (req, res) => res.status(200).render("smoothies"));
+app.get("/smoothies", isAuthorised, (req, res) =>
+  res.status(200).render("smoothies")
+);
