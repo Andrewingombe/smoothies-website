@@ -1,3 +1,35 @@
+const User = require("../models/users");
+const jwt = require("jsonwebtoken");
+
+//error handling
+const handleErrors = (err) => {
+  console.log(err.message, err.code);
+
+  //errors
+  let errors = { email: "", password: "" };
+
+  //duplicate email
+  if (err.code === 11000) {
+    errors.email = "Email has already been registered";
+    return errors;
+  }
+
+  //validation errors
+  if (err.message.includes("User validation failed")) {
+    Object.values(err.errors).forEach(({ properties }) => {
+      errors[properties.path] = properties.message;
+    });
+  }
+
+  return errors;
+};
+
+//craete jwt token
+const maxAge = 3 * 24 * 60 * 60;
+const createToken = (id) => {
+  return jwt.sign({ id }, "secret123", { expiresIn: maxAge });
+};
+
 module.exports.login_get = (req, res) => {
   res.status(200).render("login");
 };
@@ -10,8 +42,17 @@ module.exports.login_post = (req, res) => {
   res.send("Login successful");
 };
 
-module.exports.signup_post = (req, res) => {
-  res.send("Signup sucessful");
+module.exports.signup_post = async (req, res) => {
+  const { email, password } = req.body;
+  try {
+    const user = await User.create({ email: email, password: password });
+    const token = createToken(user._id);
+    res.cookie("jwt", token, { httpOnly: true, maxAge: maxAge * 1000 });
+    res.status(201).json({ user: user._id });
+  } catch (err) {
+    const errors = handleErrors(err);
+    res.status(400).json({ errors });
+  }
 };
 
 module.exports.logout = (req, res) => {
